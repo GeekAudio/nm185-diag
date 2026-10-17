@@ -114,7 +114,7 @@ amfi_get_out_of_my_way=0x1  amfi=0x80
 | 检查项 | 健康机器（本机 RTX 3080 实测） | #185 机器的现状 |
 |---|---|---|
 | `ioreg` 里的 `nvrm-bars` | `bar0@0x10:0x81000000+0x1000000` **`bar1@0x14:0x7c00000000+0x200000000`** `bar2@0x1c:0x7e00000000+0x2000000` | 只有 `bar0@0x10` 和 `bar2@0x1c`，**没有 `bar1@0x14`** |
-| `sysctl debug.nvrmfb_vram_budget_bytes` | `4294967296`（4 GB） | `25165824`（24 MB） |
+| `sudo sysctl debug.nvrmfb_vram_budget_bytes` | `4294967296`（4 GB） | `25165824`（24 MB） |
 
 **`bar1@0x14` 有没有，就是"真 BAR1 aperture 在不在"的唯一判据。**
 预算 24 MB 装不下 2560×1600 的 16 MB surface，所以 WindowServer 崩 —— 这是后半段阻塞的因果链。
