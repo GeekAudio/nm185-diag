@@ -62,6 +62,29 @@ sudo bash nm185-diag.sh
 
 ---
 
+## 前置检查：驱动真的在跑吗
+
+光把 kext 装进 `/Library/Extensions` 不够 —— `install.sh` 只拷文件，**不改 OpenCore**。
+boot-args 里必须有这 7 项：
+
+```
+nvfb=1  nvaccel=1  nvfbheads=4  -nvkmsnosmooth
+amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0
+```
+
+并且不能有 `nv_disable=1` 或 `-wegnoegpu`。
+
+**缺 `nvfb=1` 的症状**：四个 kext 全都加载、NVRM 也打印 `PASS 2 REACHED`，
+但 NVRMFB 直接 `boot-arg nvfb=1 absent: NOT starting` —— 屏幕全黑，看起来像驱动坏了。
+
+要改的地方：`EFI/OC/config.plist` → `NVRAM` → `Add` → `7C436110-AB2A-4BBB-A880-FE41995C9F82`
+→ `boot-args`，**并且把 `boot-args` 同时加进 `NVRAM` → `Delete`**
+（只加 Add 不加 Delete 无效，变量已存在时 OpenCore 不会覆盖）。
+
+脚本开跑前会自动检查这一项，缺了会直接大字警告。
+
+---
+
 ## 〇、先看两行，就知道走到了哪一步
 
 跑完取证脚本后，看这两个值就够了：

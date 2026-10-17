@@ -77,6 +77,24 @@ sudo bash /tmp/nm185-diag.sh         # ② 再取证</code></pre>
 </div>
 <p><code>--guide</code> 把整份手册打印到终端 —— 屏幕不亮就靠这个读。</p>
 
+<h2>〇 前置检查：驱动真的在跑吗</h2>
+<p>光把 kext 装进 <code>/Library/Extensions</code> 不够 —— <code>install.sh</code> 只拷文件，<strong>不改 OpenCore</strong>。
+boot-args 里必须有这 7 项：</p>
+<div class="codeblock">
+<pre><code>nvfb=1  nvaccel=1  nvfbheads=4  -nvkmsnosmooth
+amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0</code></pre>
+</div>
+<p>并且不能有 <code>nv_disable=1</code> 或 <code>-wegnoegpu</code>。</p>
+<div class="warn">
+  <p><strong>缺 <code>nvfb=1</code> 的症状</strong>：四个 kext 全都加载、NVRM 也打印 <code>PASS 2 REACHED</code>，
+  但 NVRMFB 直接 <code>boot-arg nvfb=1 absent: NOT starting</code> —— 屏幕全黑，看起来像驱动坏了。</p>
+</div>
+<p>要改的地方：<code>EFI/OC/config.plist</code> → <code>NVRAM</code> → <code>Add</code> →
+<code>7C436110-AB2A-4BBB-A880-FE41995C9F82</code> → <code>boot-args</code>，
+<strong>并且把 <code>boot-args</code> 同时加进 <code>NVRAM</code> → <code>Delete</code></strong>
+（只加 Add 不加 Delete 无效，变量已存在时 OpenCore 不会覆盖）。</p>
+<p>脚本开跑前会自动检查这一项，缺了会直接大字警告。</p>
+
 <h2>⚠ 两个常见报错</h2>
 
 <h3>① command not found / permission denied</h3>
@@ -109,7 +127,7 @@ bash /tmp/nm185-diag.sh --guide</code></pre>
   <code>sudo bash /tmp/nm185-diag.sh</code>。脚本就一个文件，不依赖任何东西。</p>
 </div>
 
-<h2>〇 判据：只看一行</h2>
+<h2>一 判据：只看一行</h2>
 <div class="tbl">
 <table>
 <thead><tr><th></th><th><code>nvrm-bars</code></th><th><code>vram_budget_bytes</code></th></tr></thead>
@@ -121,7 +139,7 @@ bash /tmp/nm185-diag.sh --guide</code></pre>
 </div>
 <p><code>bar1@0x14</code> 在不在，就是"真 BAR1 aperture 在不在"的唯一判据。24&nbsp;MB 装不下 2560×1600 的 16&nbsp;MB surface，WindowServer 所以崩。</p>
 
-<h2>一 安全网</h2>
+<h2>二 安全网</h2>
 <div class="warn">
   <p>改 <code>ResizeGpuBars</code> 有开不了机的风险。先确认至少有一条后路：</p>
   <ul>
@@ -133,7 +151,7 @@ bash /tmp/nm185-diag.sh --guide</code></pre>
 </div>
 <p>随时回退：boot-args 末尾加 <code>-nvoff</code>（驱动总开关），系统就回到普通黑苹果状态。</p>
 
-<h2>二 E0：用 2.3.5 复测 <span class="badge mut">5 分钟 · 零风险</span></h2>
+<h2>三 E0：用 2.3.5 复测 <span class="badge mut">5 分钟 · 零风险</span></h2>
 <p>不改任何配置，只确认后半段阻塞还在。跑一次 <code>sudo bash /tmp/nm185-diag.sh</code>，看输出末尾的「驱动:」和「nvrm-bars」两行。</p>
 <ul>
   <li>仍无 <code>bar1@0x14</code> → 阻塞还在，继续 E1</li>
@@ -141,7 +159,7 @@ bash /tmp/nm185-diag.sh --guide</code></pre>
   <li>桌面居然起来了 → 已修好，只需更新 issue</li>
 </ul>
 
-<h2>三 E1：BAR 放置矩阵 <span class="badge">关键</span></h2>
+<h2>四 E1：BAR 放置矩阵 <span class="badge">关键</span></h2>
 <p>源码 <code>NVRM.cpp:1031-1053</code> 有一段专为 #185 写的跳过逻辑，三个条件缺一不可：</p>
 <div class="codeblock">
 <pre><code>if (!newSize) {                        // BAR1 已 >= 4 GB
@@ -187,7 +205,7 @@ bar1: placed in hardware but the aperture list could not be built
 BAR1 (the VRAM window) has no address from macOS</code></pre>
 </div>
 
-<h2>四 判读表</h2>
+<h2>五 判读表</h2>
 <div class="tbl">
 <table>
 <thead><tr><th>现象</th><th>结论</th></tr></thead>
@@ -201,7 +219,7 @@ BAR1 (the VRAM window) has no address from macOS</code></pre>
 </table>
 </div>
 
-<h2>五 汇报：贴这四样</h2>
+<h2>六 汇报：贴这四样</h2>
 <ul>
   <li><code>kernlog-bar1-only.txt</code> 全文</li>
   <li><code>nvrm-props.txt</code> 里 <code>nvrm-bars</code> 那一行</li>

@@ -43,6 +43,36 @@ print_guide() {
  本脚本只读：不改系统设置、不写 NVRAM、不动 EFI。
 
 ----------------------------------------------------------------
+ 前置检查：先确认驱动真的被允许启动
+----------------------------------------------------------------
+
+ 光把 kext 装进 /Library/Extensions 是不够的，OpenCore 还得给这几项。
+
+ boot-args 必须含：
+
+   nvfb=1  nvaccel=1  nvfbheads=4  -nvkmsnosmooth
+   amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0
+
+ 且不能有：
+
+   nv_disable=1    -wegnoegpu
+
+ 缺 nvfb=1 的典型症状：kext 全都加载、NVRM 也打印 PASS 2，
+ 但 NVRMFB 直接 "boot-arg nvfb=1 absent: NOT starting"，
+ 屏幕全黑 —— 看起来像驱动坏了，其实只是没配 OpenCore。
+
+ 本脚本开跑前会自动检查这一项，缺了会大声喊。
+
+ 补 boot-args 的两个办法：
+
+   A) 用 1401 app 装（它自己会写）
+   B) 手动写进 config.plist：
+        NVRAM -> Add -> 7C436110-AB2A-4BBB-A880-FE41995C9F82 -> boot-args
+        并且把 boot-args 同时加进 NVRAM -> Delete
+
+ ★ 只加 Add 不加 Delete 是无效的：变量已经存在时 OC 不会覆盖。
+
+----------------------------------------------------------------
  〇  判据：只看一行
 ----------------------------------------------------------------
 
@@ -240,6 +270,61 @@ fi
 
 say() { printf '  %-42s %s\n' "$1" "$2"; }
 
+# ---------------------------------------------------------------- 前置检查
+# 装完驱动但没配 OpenCore 的机器很常见：kext 全加载了、NVRM 也起来了，
+# 但 NVRMFB 因为缺 nvfb=1 直接 NOT starting，屏幕全黑，看起来像驱动坏了。
+# 这一段先把这种情况喊出来，免得白抓一堆日志。
+preflight() {
+    ARGS=$(nvram boot-args 2>/dev/null | /usr/bin/sed 's/^boot-args[[:space:]]*//')
+    NEED="nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0"
+    MISS=""
+    for a in $NEED; do
+        case " $ARGS " in
+            *" $a "*) ;;
+            *) MISS="$MISS $a" ;;
+        esac
+    done
+    BAD=""
+    for b in nv_disable=1 -wegnoegpu -wegonogpu; do
+        case " $ARGS " in
+            *" $b "*) BAD="$BAD $b" ;;
+        esac
+    done
+    {
+        echo "### 当前 boot-args"
+        echo "${ARGS:-(空)}"
+        echo
+        echo "### 缺失（README 要求）"
+        echo "${MISS:-无}"
+        echo
+        echo "### 不该有"
+        echo "${BAD:-无}"
+    } > "$OUT/preflight.txt" 2>&1
+
+    if [ -n "$MISS" ]; then
+        echo
+        echo "  ############################################################"
+        echo "  #  ★ 前置检查未通过：boot-args 缺东西，驱动不会驱动显示器"
+        echo "  #"
+        echo "  #    缺：$MISS"
+        echo "  #"
+        echo "  #  症状就是黑屏，但 kext 全都加载了 —— 因为 NVRMFB 在"
+        echo "  #  start() 里看到没有 nvfb=1 就直接 NOT starting。"
+        echo "  #  这时候抓的日志对 issue #185 没有意义。"
+        echo "  #"
+        echo "  #  先补齐 boot-args（详见 --guide 的「前置检查」一节）再跑。"
+        echo "  ############################################################"
+        echo
+    fi
+    if [ -n "$BAD" ]; then
+        echo "  ★ 警告：boot-args 里有会把显卡藏起来的参数：$BAD"
+        echo
+    fi
+}
+
+preflight
+
+
 # 抓一个命令到文件。$1 = 文件名, 其余 = 命令
 cap() {
     f="$1"; shift
@@ -323,14 +408,19 @@ capg "nvrmfb-props.txt" "NVRMNVDAFramebuffer|bar1|BAR1|budget" \
      ioreg -l -w0 -p IOService -c NVRMNVDAFramebuffer
 
 # 显卡 PCI 节点（assigned-addresses / device memory 全在这里）
+# 注意：节点在 IOService 平面的名字是 GFX0，不是 pci10de,xxxx（那个只出现在
+# compatible 属性里，用 -n pci10de,xxxx 抓不到任何东西，早先的版本这里是个空文件）。
 {
-    for id in $(ioreg -p IOService -l -w0 2>/dev/null | /usr/bin/grep -o 'pci10de,[0-9a-f]*' | sort -u); do
-        echo "########## $id ##########"
-        ioreg -l -w0 -p IOService -n "$id" -r 2>/dev/null
-        echo
-    done
+    echo "########## GFX0（显卡本体，含 assigned-addresses） ##########"
+    ioreg -l -w0 -p IOService -n GFX0 -r 2>/dev/null
+    echo
+    echo "########## PEGP（上游根端口，含窗口寄存器） ##########"
+    ioreg -l -w0 -p IOService -n PEGP -r 2>/dev/null
+    echo
+    echo "########## 兜底：所有 10de 设备的 device-id / assigned-addresses ##########"
+    ioreg -l -w0 -p IOService -c IOPCIDevice 2>/dev/null | /usr/bin/grep -E '"device-id"|"assigned-addresses"|"IOName"'
 } > "$OUT/gpu-pci.txt" 2>&1
-say "gpu-pci.txt" ok
+say "gpu-pci.txt" "$(/usr/bin/wc -l < "$OUT/gpu-pci.txt" | /usr/bin/tr -d ' ') 行"
 
 # 根端口 / 桥窗口（placeLargeBar1 改的就是这里）
 capg "pci-bridges.txt" "IOPCI2PCIBridge|IOPCIBridge|assigned-addresses|ranges" \
@@ -373,7 +463,7 @@ if [ -x /usr/bin/log ]; then
         say "kernlog-NVRM.txt (dmesg 兜底)" "$n 行"
     fi
     # 只要 bar1 决策那几行，单独一份，方便直接贴 issue
-    /usr/bin/grep -E "bar1:|BAR1|aperture|nvAllocVram|PASS [12]|RmInitAdapter|kbusVerifyBar2|rm_init_adapter|auto-go|boot hold" \
+    /usr/bin/grep -E "bar1:|BAR1|aperture|nvAllocVram|PASS [12]|RmInitAdapter|kbusVerifyBar2|rm_init_adapter|auto-go|boot hold|nvfb=1 absent|NOT starting" \
         "$OUT/kernlog-NVRM.txt" > "$OUT/kernlog-bar1-only.txt" 2>/dev/null
     say "kernlog-bar1-only.txt" "$(/usr/bin/wc -l < "$OUT/kernlog-bar1-only.txt" | /usr/bin/tr -d ' ') 行"
 else
@@ -425,12 +515,30 @@ echo
 echo "== 一句话判读 =="
 BARS=$(/usr/bin/grep -h "nvrm-bars" "$OUT/nvrm-props.txt" 2>/dev/null | /usr/bin/grep -o '"nvrm-bars" = ".*"' | head -1)
 BUDGET=$(/usr/bin/grep "nvrmfb_vram_budget_bytes" "$OUT/sysctl.txt" 2>/dev/null | /usr/bin/awk '{print $2}')
+B1SZ=$(echo "${BARS:-}" | /usr/bin/sed -n 's/.*bar1@0x14:0x[0-9a-f]*+0x\([0-9a-f]*\).*/\1/p')
+B1MB=0
+if [ -n "$B1SZ" ]; then
+    B1B=$(printf '%d' "0x$B1SZ" 2>/dev/null) && B1MB=$((B1B / 1048576))
+fi
 echo "  nvrm-bars : ${BARS:-（没读到）}"
 echo "  VRAM 预算 : ${BUDGET:-（没读到）} 字节"
 case "${BARS:-}" in
-    *"bar1@0x14"*) echo "  → 真 BAR1 aperture 存在。若仍黑屏，问题不在 BAR1 放置，看 kernlog 里的 nvAllocVram。" ;;
-    *)             echo "  → ★ 缺 bar1@0x14：真 BAR1 aperture 不在 nub 里，和 issue #185 后半段阻塞一致。" ;;
+    *"bar1@0x14"*)
+        if [ "${B1MB:-0}" -ge 4096 ]; then
+            echo "  → bar1@0x14 是 ${B1MB} MB（大 BAR1，跳过搬动的条件才可能成立）。"
+            echo "    若仍黑屏，看 kernlog 里的 nvAllocVram / NVKMS 布局，不是 BAR1 放置。"
+        else
+            echo "  → bar1@0x14 只有 ${B1MB} MB（小 BAR1）。驱动会尝试 resize 到 8 GB 并把它搬走；"
+            echo "    日志里若有 'aperture list could not be built'，就是 aperture 重建失败 —— #185 主路径。"
+        fi
+        ;;
+    *) echo "  → ★ 缺 bar1@0x14：真 BAR1 aperture 不在 nub 里，和 issue #185 后半段阻塞一致。" ;;
 esac
+if /usr/bin/grep -q "nvfb=1 absent" "$OUT/kernlog-NVRM.txt" 2>/dev/null; then
+    echo
+    echo "  ★★ 但 NVRMFB 根本没启动（boot-arg nvfb=1 absent）——"
+    echo "     屏幕是黑的，可上面这些 BAR1 分析还没轮到。先补 boot-args。"
+fi
 echo
 echo "== 下一步 =="
 echo "  1) 只贴两个文件就够（不用传整个包）："
