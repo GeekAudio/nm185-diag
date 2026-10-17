@@ -77,9 +77,10 @@ sudo bash /tmp/nm185-diag.sh         # ② 再取证</code></pre>
 </div>
 <p><code>--guide</code> 把整份手册打印到终端 —— 屏幕不亮就靠这个读。</p>
 
-<h2>〇 前置检查：驱动真的在跑吗</h2>
-<p>光把 kext 装进 <code>/Library/Extensions</code> 不够 —— <code>install.sh</code> 只拷文件，<strong>不改 OpenCore</strong>。
-boot-args 里必须有这 7 项：</p>
+<h2>〇 必读：boot-args 必须加这 7 项</h2>
+<p><strong>这是硬性要求，不是可选优化。</strong>光把 kext 装进 <code>/Library/Extensions</code> 不够 ——
+<code>install.sh</code> 只拷文件，<strong>不改 OpenCore</strong>。缺了就是黑屏。</p>
+<p>boot-args 里必须有这 7 项，一项都不能少：</p>
 <div class="codeblock">
 <pre><code>nvfb=1  nvaccel=1  nvfbheads=4  -nvkmsnosmooth
 amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0</code></pre>

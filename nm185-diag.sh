@@ -43,12 +43,13 @@ print_guide() {
  本脚本只读：不改系统设置、不写 NVRAM、不动 EFI。
 
 ----------------------------------------------------------------
- 前置检查：先确认驱动真的被允许启动
+ 必读：boot-args 必须加这 7 项（硬性要求）
 ----------------------------------------------------------------
 
- 光把 kext 装进 /Library/Extensions 是不够的，OpenCore 还得给这几项。
+ 光把 kext 装进 /Library/Extensions 是不够的 —— install.sh 只拷文件，
+ 不改 OpenCore。缺了就是黑屏，这不是可选项。
 
- boot-args 必须含：
+ boot-args 必须含，一项都不能少：
 
    nvfb=1  nvaccel=1  nvfbheads=4  -nvkmsnosmooth
    amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0

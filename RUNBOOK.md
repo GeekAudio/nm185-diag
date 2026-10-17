@@ -62,10 +62,12 @@ sudo bash nm185-diag.sh
 
 ---
 
-## 前置检查：驱动真的在跑吗
+## 必读：boot-args 必须加这 7 项
 
-光把 kext 装进 `/Library/Extensions` 不够 —— `install.sh` 只拷文件，**不改 OpenCore**。
-boot-args 里必须有这 7 项：
+**这是硬性要求，不是可选优化。** 光把 kext 装进 `/Library/Extensions` 不够 ——
+`install.sh` 只拷文件，**不改 OpenCore**。缺了就是黑屏。
+
+boot-args 里必须有这 7 项，一项都不能少：
 
 ```
 nvfb=1  nvaccel=1  nvfbheads=4  -nvkmsnosmooth
