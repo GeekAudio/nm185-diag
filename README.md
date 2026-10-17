@@ -17,12 +17,17 @@ curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-dia
 sudo bash /tmp/nm185-diag.sh
 ```
 
-GitHub 访问不了时用镜像（内容一样）：
+如果报 `curl: (35) Recv failure: Connection reset by peer`，那是网络被重置，不是脚本问题。
+注意 **`curl` 不读 macOS 的系统代理设置**，只认环境变量 —— 代理开着也要显式给：
 
 ```bash
-curl -fsSL https://cdn.jsdelivr.net/gh/GeekAudio/nm185-diag@main/nm185-diag.sh -o /tmp/nm185-diag.sh
+export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890
+curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh
 sudo bash /tmp/nm185-diag.sh
 ```
+
+端口按代理工具改：Clash / ClashX `7890`、Surge `6152`、V2Ray `10809`（http）。
+也可以只给这一条命令加：`curl -x http://127.0.0.1:7890 -fsSL …`
 
 产出 `nm185-<主机名>-<时间戳>.tar.gz`，以及同名的解包目录。
 

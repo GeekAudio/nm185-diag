@@ -108,12 +108,16 @@
 <pre><code>curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh
 sudo bash /tmp/nm185-diag.sh</code></pre>
   </div>
-  <p class="hint">GitHub 访问不了就用镜像（内容一样）：</p>
+  <p class="hint"><strong>如果报了 <code>curl: (35) Recv failure: Connection reset by peer</code></strong> —— 那是网络被重置，不是脚本问题。
+  注意 <strong><code>curl</code> 不读 macOS 的系统代理设置</strong>，只认环境变量；代理开着也要显式给：</p>
   <div class="codeblock">
-    <button class="copy" data-copy="curl -fsSL https://cdn.jsdelivr.net/gh/GeekAudio/nm185-diag@main/nm185-diag.sh -o /tmp/nm185-diag.sh&#10;sudo bash /tmp/nm185-diag.sh">复制</button>
-<pre><code>curl -fsSL https://cdn.jsdelivr.net/gh/GeekAudio/nm185-diag@main/nm185-diag.sh -o /tmp/nm185-diag.sh
+    <button class="copy" data-copy="export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890&#10;curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh&#10;sudo bash /tmp/nm185-diag.sh">复制</button>
+<pre><code>export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890
+curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh
 sudo bash /tmp/nm185-diag.sh</code></pre>
   </div>
+  <p class="hint">端口按你的代理工具改：Clash / ClashX <code>7890</code>、Surge <code>6152</code>、V2Ray <code>10809</code>（http）。
+  也可以只给这一条命令加：<code>curl -x http://127.0.0.1:7890 -fsSL …</code></p>
   <p class="hint">脚本纯只读：不改系统设置、不写 NVRAM、不动 EFI。产出 <code>nm185-&lt;主机名&gt;-&lt;时间戳&gt;.tar.gz</code>。</p>
 </div>
 
