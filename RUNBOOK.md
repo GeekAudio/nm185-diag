@@ -62,17 +62,21 @@ sudo bash nm185-diag.sh
 
 ---
 
-## 必读：boot-args 必须加这 7 项
+## 必读：boot-args 必须加这 6 项
 
 **这是硬性要求，不是可选优化。** 光把 kext 装进 `/Library/Extensions` 不够 ——
 `install.sh` 只拷文件，**不改 OpenCore**。缺了就是黑屏。
 
-boot-args 里必须有这 7 项，一项都不能少：
+boot-args 里必须有这 6 项，一项都不能少：
 
 ```
 nvfb=1  nvaccel=1  nvfbheads=4  -nvkmsnosmooth
-amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0
+amfi_get_out_of_my_way=0x1  amfi=0x80
 ```
+
+> ⚠️ `ipc_control_port_options=0` **不是必需的，先别加** —— README 把它列进了推荐串，
+> 但已实测有机器加上去**直接 panic**。它只跟 Firefox 启动崩溃有关，跟显示链路无关。
+> 要试也放到最后单独试。
 
 并且不能有 `nv_disable=1` 或 `-wegnoegpu`。
 
@@ -84,7 +88,7 @@ amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0
 | `-nvkmsnosmooth` | 关掉「平滑接管」：不再复刻固件当前的显示时序，让 NVKMS 自己重新设模式（`NVRM.cpp:583`） | 走 smooth takeover 路径，部分机器上花屏 / 黑屏 |
 | `amfi_get_out_of_my_way=0x1` | 关掉 AMFI 的代码签名校验（Apple 参数，不是驱动的） | WindowServer 加载不了未签名的 `NVMTLDriver.bundle` → **没有 Metal** |
 | `amfi=0x80` | 同上，放宽库校验（Apple 参数） | 同上 |
-| `ipc_control_port_options=0` | 放宽 Mach IPC 控制端口限制（Apple 参数） | Firefox 启动即崩（1.11.0 的 changelog 记录过） |
+| `ipc_control_port_options=0` | 放宽 Mach IPC 控制端口限制（Apple 参数）。**只为修 Firefox 启动崩溃，与显示无关** | 缺了不影响驱动；**但已实测有机器加了直接 panic**，所以默认不加 |
 
 不能有的两个：`nv_disable=1`（旧 web driver 的禁用开关，会隐藏显卡）、
 `-wegnoegpu` / `-wegonogpu`（WhateverGreen 的参数，会把独显藏起来）。

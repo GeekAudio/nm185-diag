@@ -43,7 +43,7 @@ print_guide() {
  本脚本只读：不改系统设置、不写 NVRAM、不动 EFI。
 
 ----------------------------------------------------------------
- 必读：boot-args 必须加这 7 项（硬性要求）
+ 必读：boot-args 必须加这 6 项（硬性要求）
 ----------------------------------------------------------------
 
  光把 kext 装进 /Library/Extensions 是不够的 —— install.sh 只拷文件，
@@ -52,7 +52,11 @@ print_guide() {
  boot-args 必须含，一项都不能少：
 
    nvfb=1  nvaccel=1  nvfbheads=4  -nvkmsnosmooth
-   amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0
+   amfi_get_out_of_my_way=0x1  amfi=0x80
+
+ ★ ipc_control_port_options=0 不是必需的，先别加。
+   README 把它列进了推荐串，但已实测有机器加上去直接 panic。
+   它只跟 Firefox 启动崩溃有关，跟显示链路无关。
 
  且不能有：
 
@@ -82,7 +86,9 @@ print_guide() {
                                的 NVMTLDriver.bundle -> 没有 Metal
 
    ipc_control_port_options=0  放宽 Mach IPC 控制端口（Apple 参数）
-                               缺了 -> Firefox 启动即崩
+                               只为修 Firefox 启动崩溃，与显示无关
+                               缺了不影响驱动 —— 但已实测有机器加了
+                               直接 panic，所以默认不加
 
  不能有的两个：
    nv_disable=1   旧 web driver 的禁用开关，会把显卡藏起来

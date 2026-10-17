@@ -77,13 +77,18 @@ sudo bash /tmp/nm185-diag.sh         # ② 再取证</code></pre>
 </div>
 <p><code>--guide</code> 把整份手册打印到终端 —— 屏幕不亮就靠这个读。</p>
 
-<h2>〇 必读：boot-args 必须加这 7 项</h2>
+<h2>〇 必读：boot-args 必须加这 6 项</h2>
 <p><strong>这是硬性要求，不是可选优化。</strong>光把 kext 装进 <code>/Library/Extensions</code> 不够 ——
 <code>install.sh</code> 只拷文件，<strong>不改 OpenCore</strong>。缺了就是黑屏。</p>
-<p>boot-args 里必须有这 7 项，一项都不能少：</p>
+<p>boot-args 里必须有这 6 项，一项都不能少：</p>
 <div class="codeblock">
 <pre><code>nvfb=1  nvaccel=1  nvfbheads=4  -nvkmsnosmooth
-amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0</code></pre>
+amfi_get_out_of_my_way=0x1  amfi=0x80</code></pre>
+</div>
+<div class="warn">
+  <p><code>ipc_control_port_options=0</code> <strong>不是必需的，先别加</strong> ——
+  README 把它列进了推荐串，但已实测有机器加上去<strong>直接 panic</strong>。
+  它只跟 Firefox 启动崩溃有关，跟显示链路无关。要试也放到最后单独试。</p>
 </div>
 <p>并且不能有 <code>nv_disable=1</code> 或 <code>-wegnoegpu</code>。</p>
 
@@ -121,9 +126,9 @@ amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0</code></pre>
   <td>同上，放宽库校验（Apple 参数）</td>
 </tr>
 <tr>
-  <td><code>ipc_control_port_options=0</code></td>
-  <td>放宽 Mach IPC 控制端口限制（Apple 参数）</td>
-  <td>Firefox 启动即崩（1.11.0 的 changelog 记录过）</td>
+  <td><code>ipc_control_port_options=0</code><br><span style="color:#b42318;font-weight:650">先别加</span></td>
+  <td>放宽 Mach IPC 控制端口限制（Apple 参数）。<strong>只为修 Firefox 启动崩溃，与显示无关</strong></td>
+  <td>缺了不影响驱动；<strong>但已实测有机器加了直接 panic</strong>，所以默认不加</td>
 </tr>
 </tbody>
 </table>
