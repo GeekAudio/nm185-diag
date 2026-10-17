@@ -470,6 +470,13 @@ echo "== 7/7 崩溃现场 =="
     # __assert_rtn 的断言原文在 asi/reason 里，这是定位 CoreDisplay 崩溃最直接的一条
     echo "### WindowServer 断言原文"
     /usr/bin/grep -hoE 'Assertion failed:[^"]*' /Library/Logs/DiagnosticReports/WindowServer-*.ips 2>/dev/null | /usr/bin/sort -u | head -5
+    # 有些 .ips 不含 "Assertion failed"，但元数据段（asi/reason/vmSummary）仍可能有关键信息
+    F=$(ls -t /Library/Logs/DiagnosticReports/WindowServer-*.ips 2>/dev/null | head -1)
+    if [ -n "${F:-}" ]; then
+        echo
+        echo "### 最新一份 .ips 的头部元数据（${F}）"
+        /usr/bin/head -14 "$F"
+    fi
     echo "### 内核 panic（最新 2 份）"
     ls -lt /Library/Logs/DiagnosticReports/Kernel-*.panic 2>/dev/null | head -2
 } > "$OUT/crashes.txt" 2>&1
