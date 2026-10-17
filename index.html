@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Issue #185 测试手册 · NullMoth NVIDIA 驱动</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f7f8fa; --panel2:#eef1f5; --line:#e2e6ec;
+    --text:#1c2128; --muted:#5c6773; --accent:#1a6dcc; --accent-soft:#e8f1fc;
+    --warn:#b45309; --warn-bg:#fff8ed; --warn-line:#f3d9ac;
+    --danger:#b42318; --danger-bg:#fef3f2; --danger-line:#fbd5d1;
+    --ok:#0f7b4f; --ok-bg:#eefaf3; --ok-line:#c3e9d6;
+    --code-bg:#f4f6f9; --code-text:#1c2128;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:16px/1.75 -apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:40px 24px 96px}
+  header.top{border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:36px}
+  .kicker{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+  h1{font-size:30px;line-height:1.3;margin:0 0 14px;font-weight:700;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:15px;margin:0}
+  .sub code{background:var(--code-bg);padding:1px 6px;border-radius:5px;font-size:13.5px}
+  h2{font-size:21px;margin:52px 0 16px;padding-top:20px;border-top:1px solid var(--line);font-weight:700;letter-spacing:-.01em}
+  h2:first-of-type{border-top:none;padding-top:0}
+  h3{font-size:16.5px;margin:28px 0 10px;font-weight:650}
+  p{margin:0 0 14px}
+  ul,ol{margin:0 0 14px;padding-left:22px}
+  li{margin:5px 0}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{
+    font:13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--code-bg);color:var(--code-text);padding:1.5px 6px;border-radius:5px;
+    word-break:break-word;
+  }
+  .codeblock{position:relative;margin:0 0 18px;background:var(--code-bg);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .codeblock pre{margin:0;padding:16px 18px;overflow-x:auto}
+  .codeblock code{background:none;padding:0;font-size:13px;line-height:1.7;display:block;white-space:pre}
+  .copy{
+    position:absolute;top:8px;right:8px;font:12px/1 -apple-system,sans-serif;
+    padding:6px 10px;border:1px solid var(--line);border-radius:7px;
+    background:#fff;color:var(--muted);cursor:pointer;transition:.15s;
+  }
+  .copy:hover{color:var(--accent);border-color:var(--accent)}
+  .copy.done{color:var(--ok);border-color:var(--ok-line);background:var(--ok-bg)}
+  table{width:100%;border-collapse:collapse;margin:0 0 20px;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--panel);font-weight:650;font-size:13.5px;color:var(--muted);white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:0 0 20px}
+  .tbl-wrap table{margin:0}
+  .note,.warn,.danger,.ok{border-radius:10px;padding:14px 18px;margin:0 0 18px;font-size:14.5px;border:1px solid}
+  .note{background:var(--accent-soft);border-color:#cfe2f8}
+  .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+  .danger{background:var(--danger-bg);border-color:var(--danger-line)}
+  .ok{background:var(--ok-bg);border-color:var(--ok-line)}
+  .note p:last-child,.warn p:last-child,.danger p:last-child,.ok p:last-child{margin-bottom:0}
+  .hero{
+    background:linear-gradient(180deg,#f2f7fe,#eaf2fd);border:1px solid #cfe2f8;
+    border-radius:14px;padding:22px 24px;margin:0 0 32px;
+  }
+  .hero h3{margin:0 0 6px;font-size:15px}
+  .hero .hint{font-size:13.5px;color:var(--muted);margin:12px 0 0}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:0 0 18px}
+  .steps>li{counter-increment:s;position:relative;padding-left:38px;margin:0 0 14px}
+  .steps>li::before{
+    content:counter(s);position:absolute;left:0;top:2px;width:24px;height:24px;border-radius:50%;
+    background:var(--accent);color:#fff;font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .badge{display:inline-block;font-size:12px;font-weight:650;padding:2px 9px;border-radius:20px;vertical-align:2px}
+  .b-key{background:var(--accent);color:#fff}
+  .b-mut{background:var(--panel2);color:var(--muted)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+  footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:13.5px}
+  .checklist{list-style:none;padding-left:0}
+  .checklist li{padding-left:26px;position:relative}
+  .checklist li::before{content:"☐";position:absolute;left:0;color:var(--muted)}
+  @media (max-width:640px){
+    .wrap{padding:26px 16px 72px}
+    h1{font-size:24px} h2{font-size:19px}
+    table{font-size:13.5px} th,td{padding:9px 10px}
+    .copy{top:6px;right:6px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="kicker">NullMoth NVIDIA Driver · GitHub Issue #185</p>
+  <h1>RTX 4060 Laptop 黑屏 · 测试手册</h1>
+  <p class="sub">
+    目标机型：Lenovo Legion R9000P 2023 / Ryzen 9 7945HX / RTX 4060 Laptop（<code>10de:28e0</code>，8&nbsp;GB BAR1）/ 内屏 2560×1600<br>
+    驱动版本：NullMoth <strong>2.3.5</strong> · 前提：<strong>能 SSH 进黑屏的系统</strong>
+  </p>
+</header>
+
+<div class="hero">
+  <h3>一键取证（在目标机上跑，SSH 里也行）</h3>
+  <div class="codeblock">
+    <button class="copy" data-copy="curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh&#10;sudo bash /tmp/nm185-diag.sh">复制</button>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh
+sudo bash /tmp/nm185-diag.sh</code></pre>
+  </div>
+  <p class="hint">GitHub 访问不了就用镜像（内容一样）：</p>
+  <div class="codeblock">
+    <button class="copy" data-copy="curl -fsSL https://cdn.jsdelivr.net/gh/GeekAudio/nm185-diag@main/nm185-diag.sh -o /tmp/nm185-diag.sh&#10;sudo bash /tmp/nm185-diag.sh">复制</button>
+<pre><code>curl -fsSL https://cdn.jsdelivr.net/gh/GeekAudio/nm185-diag@main/nm185-diag.sh -o /tmp/nm185-diag.sh
+sudo bash /tmp/nm185-diag.sh</code></pre>
+  </div>
+  <p class="hint">脚本纯只读：不改系统设置、不写 NVRAM、不动 EFI。产出 <code>nm185-&lt;主机名&gt;-&lt;时间戳&gt;.tar.gz</code>。</p>
+</div>
+
+<h2>〇、先看两行，就知道走到了哪一步</h2>
+
+<p>跑完脚本后，看这两个值就够了：</p>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>检查项</th><th>健康机器（RTX 3080 实测）</th><th>#185 机器的现状</th></tr></thead>
+<tbody>
+<tr>
+  <td><code>ioreg</code> 里的<br><code>nvrm-bars</code></td>
+  <td class="mono">bar0@0x10:0x81000000+0x1000000<br><strong>bar1@0x14:0x7c00000000+0x200000000</strong><br>bar2@0x1c:0x7e00000000+0x2000000</td>
+  <td class="mono">只有 <code>bar0@0x10</code> 和 <code>bar2@0x1c</code><br><strong>没有 <code>bar1@0x14</code></strong></td>
+</tr>
+<tr>
+  <td><code>sysctl</code><br><code>debug.nvrmfb_vram_budget_bytes</code></td>
+  <td class="mono">4294967296（4&nbsp;GB）</td>
+  <td class="mono">25165824（24&nbsp;MB）</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="note">
+  <p><strong><code>bar1@0x14</code> 有没有，就是"真 BAR1 aperture 在不在"的唯一判据。</strong>
+  预算 24&nbsp;MB 装不下 2560×1600 的 16&nbsp;MB surface，所以 WindowServer 崩 —— 这是后半段阻塞的因果链。</p>
+</div>
+
+<h2>一、安全网（改配置之前必须先做）</h2>
+
+<div class="warn">
+  <p>这台机器改 <code>ResizeGpuBars</code> 有<strong>开不了机</strong>的风险。改之前确认至少有一条后路。</p>
+</div>
+
+<ul class="checklist">
+  <li><strong>1401 的 <code>Remove NVIDIA driver</code> 启动项可用</strong>（OpenCore 选择器里能看到，选它就卸载驱动并还原 config）</li>
+  <li>或者：U 盘里有一份能启动的 EFI 副本</li>
+  <li>或者：能把这台机器的硬盘拆到别的机器上挂 ESP</li>
+</ul>
+
+<p>只要有一条，就可以往下走。都没有就先别改 <code>ResizeGpuBars</code>，只做 E0。</p>
+
+<p><strong>随时能回到能用的状态</strong>（黑屏但 SSH 通的情况下，直接在 SSH 里执行）：</p>
+
+<div class="codeblock">
+  <button class="copy" data-copy="sudo nvram boot-args=&quot;nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0 -nvoff&quot;&#10;sudo reboot">复制</button>
+<pre><code>sudo nvram boot-args="nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0 -nvoff"
+sudo reboot</code></pre>
+</div>
+
+<p><code>-nvoff</code> 是驱动总开关（源码 <code>kexts/NVRM/nvrm_off.h</code>），加上它 NVRM 和 NVRMFB 都不会 start，系统回到普通黑苹果状态。</p>
+
+<h2>二、E0：用 2.3.5 复测一次 <span class="badge b-mut">5 分钟 · 零风险</span></h2>
+
+<p>不改任何配置，只确认后半段阻塞还在。</p>
+
+<div class="codeblock">
+  <button class="copy" data-copy="# 1. 确认版本（期望 2.3.5）&#10;plutil -p /Library/Extensions/NVRM.kext/Contents/Info.plist | grep CFBundleVersion&#10;&#10;# 2. 取证&#10;sudo bash /tmp/nm185-diag.sh ~/Desktop">复制</button>
+<pre><code># 1. 确认版本（期望 2.3.5）
+plutil -p /Library/Extensions/NVRM.kext/Contents/Info.plist | grep CFBundleVersion
+
+# 2. 取证
+sudo bash /tmp/nm185-diag.sh ~/Desktop</code></pre>
+</div>
+
+<h3>判读</h3>
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>现象</th><th>含义</th><th>下一步</th></tr></thead>
+<tbody>
+<tr><td><code>nvrm-bars</code> 里仍然没有 <code>bar1@0x14</code></td><td>后半段阻塞原样还在</td><td>继续 E1</td></tr>
+<tr><td>预算不再是 24&nbsp;MB</td><td>2.2.0~2.3.5 之间动过 BAR1 预算路径</td><td><strong>先回报</strong>，计划要改</td></tr>
+<tr><td>桌面居然起来了</td><td>2.3.x 已经修好了</td><td>只需更新 issue</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>三、E1：BAR 放置矩阵 <span class="badge b-key">关键一步</span></h2>
+
+<h3>为什么做这个</h3>
+
+<p><code>kexts/NVRM/NVRM.cpp:1031-1053</code> 有一段专门为 #185 写的跳过逻辑：</p>
+
+<div class="codeblock">
+<pre><code>// Moving such a BAR1 to the top of the host window broke RTX 4060/4070 laptops (GH #185, #205)
+if (!newSize) {                                  // BAR1 已经是 &gt;= 4 GB，不需要 resize
+    if (cur1 &gt;= (4ULL&lt;&lt;30) &amp;&amp; inNub &amp;&amp; !conInside) {
+        LOG("bar1: BAR1 already %llu MB at 0x%llx ... - left in place, as NVIDIA's driver does");
+        return true;                             // ← 不搬，保住 aperture
+    }
+}</code></pre>
+</div>
+
+<p>三个条件 <code>cur1 &gt;= 4GB</code> / <code>inNub</code> / <code>!conInside</code> 缺一不可。现有日志显示它<strong>没有触发</strong>，
+但我们不知道是哪个条件为假。<strong>这一组实验就是把这三种可能拆开。</strong></p>
+
+<h3>怎么改</h3>
+
+<p><code>ResizeGpuBars</code> / <code>ResizeAppleGpuBars</code> 在 <code>Booter → Quirks</code>。SSH 里改（记得先备份）：</p>
+
+<div class="codeblock">
+  <button class="copy" data-copy="# 找到并挂载 ESP&#10;diskutil list&#10;sudo diskutil mount disk0s1&#10;&#10;# 挂载点里可能是 OC/ 也可能是 EFI/OC/，自动找一下&#10;CFG=$(ls /Volumes/EFI/OC/config.plist /Volumes/EFI/EFI/OC/config.plist 2&gt;/dev/null | head -1)&#10;echo &quot;config = $CFG&quot;&#10;&#10;# 备份（★ 一定要做）&#10;sudo cp &quot;$CFG&quot; ~/config.plist.bak-$(date +%H%M)&#10;&#10;# 改值：13 = 2^13 MB = 8192 MB；12 = 4096 MB；8 = 256 MB；-1 = 不动&#10;sudo plutil -replace 'Booter.Quirks.ResizeGpuBars'      -integer 13 &quot;$CFG&quot;&#10;sudo plutil -replace 'Booter.Quirks.ResizeAppleGpuBars' -integer -1 &quot;$CFG&quot;&#10;&#10;# 校验 + 落盘（★ FAT 不 sync 会读到旧文件）&#10;plutil -lint &quot;$CFG&quot;&#10;plutil -extract Booter.Quirks.ResizeGpuBars      raw &quot;$CFG&quot;&#10;plutil -extract Booter.Quirks.ResizeAppleGpuBars raw &quot;$CFG&quot;&#10;sync; sleep 8&#10;&#10;sudo reboot">复制</button>
+<pre><code># 找到并挂载 ESP
+diskutil list
+sudo diskutil mount disk0s1
+
+# 挂载点里可能是 OC/ 也可能是 EFI/OC/，自动找一下
+CFG=$(ls /Volumes/EFI/OC/config.plist /Volumes/EFI/EFI/OC/config.plist 2>/dev/null | head -1)
+echo "config = $CFG"
+
+# 备份（★ 一定要做）
+sudo cp "$CFG" ~/config.plist.bak-$(date +%H%M)
+
+# 改值：13 = 2^13 MB = 8192 MB；12 = 4096 MB；8 = 256 MB；-1 = 不动
+sudo plutil -replace 'Booter.Quirks.ResizeGpuBars'      -integer 13 "$CFG"
+sudo plutil -replace 'Booter.Quirks.ResizeAppleGpuBars' -integer -1 "$CFG"
+
+# 校验 + 落盘（★ FAT 不 sync 会读到旧文件）
+plutil -lint "$CFG"
+plutil -extract Booter.Quirks.ResizeGpuBars      raw "$CFG"
+plutil -extract Booter.Quirks.ResizeAppleGpuBars raw "$CFG"
+sync; sleep 8
+
+sudo reboot</code></pre>
+</div>
+
+<div class="note">
+  <p>这几条已在 config.plist 副本上验证过，<code>plutil -replace</code> 对负数和整数都正常。<br>
+  注意 <code>ResizeAppleGpuBars</code> 是<strong>整数</strong>，<code>-1</code> 表示"不动"，不是"缩到最小"。</p>
+</div>
+
+<h3>矩阵</h3>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>组</th><th><code>ResizeGpuBars</code></th><th><code>ResizeAppleGpuBars</code></th><th>想验证什么</th></tr></thead>
+<tbody>
+<tr><td><strong>A</strong></td><td><code>-1</code></td><td><code>0</code></td><td>基线：Apple 小 BAR 路径（issue 里的现状）</td></tr>
+<tr><td><strong>B</strong></td><td><code>-1</code></td><td><code>-1</code></td><td>保留固件自己的放置</td></tr>
+<tr><td><strong>C</strong></td><td><code>13</code></td><td><code>-1</code></td><td><strong>重点</strong>：固件直接给 8&nbsp;GB 且不被 macOS 缩回去</td></tr>
+<tr><td><strong>D</strong></td><td><code>12</code></td><td><code>-1</code></td><td><code>&gt;= 4 GB</code> 这个阈值的边界（4&nbsp;GB 刚好卡在条件上）</td></tr>
+<tr><td><strong>E</strong></td><td><code>8</code></td><td><code>-1</code></td><td>对照组：固件给 256&nbsp;MB，走 resize 路径</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>每组跑完都 <code>sudo bash /tmp/nm185-diag.sh ~/Desktop</code>，把 <code>kernlog-bar1-only.txt</code> 和 <code>nvrm-props.txt</code> 留着。</p>
+
+<h3>每组要抓的那几行</h3>
+
+<div class="codeblock">
+<pre><code>bar1: Resizable BAR capability @0x... says BAR1 = N MB        ← 固件实际给了多大
+bar1: BAR1 is N MB; will resize it to M MB                    ← 有没有走 resize
+bar1: BAR1 already N MB at 0x... (above 4 GB, in the nub, console 0x... outside it) - left in place   ← ★ 跳过逻辑生效
+bar1: placing BAR1 N MB @0x...                                ← 走了搬动（会坏）
+bar1: placed in hardware but the aperture list could not be built (no memory)   ← 搬了但建不出 aperture
+BAR1 (the VRAM window) has no address from macOS               ← 最终状态</code></pre>
+</div>
+
+<h2>四、判读表</h2>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>现象</th><th>含义</th><th>下一步</th></tr></thead>
+<tbody>
+<tr>
+  <td>C 组出现 <code>left in place</code>，<code>nvrm-bars</code> 有 <code>bar1@0x14</code>，预算 4&nbsp;GB，<strong>桌面起来</strong></td>
+  <td>修好了，不用改代码，只需在 OpenCore 里固定这组值</td>
+  <td>更新 issue，写清配置</td>
+</tr>
+<tr>
+  <td>C 组出现 <code>left in place</code>，但<strong>仍然黑屏</strong>，<code>nvAllocVram</code> 还是 REFUSED</td>
+  <td>不是 BAR1 放置的问题，是 NVKMS 的 VRAM 布局 / scanout 分配</td>
+  <td>看 <code>kernlog</code> 里 <code>nvAllocVram</code> 的完整上下文</td>
+</tr>
+<tr>
+  <td>C 组<strong>没有</strong> <code>left in place</code>，仍然是 <code>placing BAR1 ... @0x3ffa...</code></td>
+  <td>跳过逻辑没触发 → <code>inNub</code> 或 <code>conInside</code> 为假</td>
+  <td>需要二进制补丁来分开这两个</td>
+</tr>
+<tr>
+  <td>所有组都不出现 <code>left in place</code>，且 <code>nvrm-bars</code> 恒缺 <code>bar1@0x14</code></td>
+  <td>IOPCIFamily 从不给这个 BAR 建 aperture</td>
+  <td>NVRM 侧重建 aperture 的活</td>
+</tr>
+<tr>
+  <td>E 组或 A 组能起来</td>
+  <td>8&nbsp;GB BAR1 本身是问题（VRAM 窗口太大）</td>
+  <td>换方向：验证 <code>-nvrmsmallbar</code>（已知会让这台机器中途重启）</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h2>五、汇报模板</h2>
+
+<div class="codeblock">
+  <button class="copy" data-copy="机型：R9000P 2023 / 7945HX / RTX 4060 Laptop (10de:28e0) / 8 GB BAR1&#10;macOS：15.8.1&#10;驱动：NullMoth 2.3.5（官方 tarball，未修改）&#10;OpenCore：ResizeGpuBars=<X> ResizeAppleGpuBars=<Y> ResizeUsePciRbIo=False&#10;其它 boot-args：<原样>&#10;&#10;结果：<桌面起来了 / 黑屏但 SSH 通 / 中途重启>&#10;&#10;关键日志：&#10;<贴 kernlog-bar1-only.txt 全文>&#10;&#10;nvrm-bars：&#10;<贴那一行>&#10;&#10;VRAM 预算：<数字> 字节">复制</button>
+<pre><code>机型：R9000P 2023 / 7945HX / RTX 4060 Laptop (10de:28e0) / 8 GB BAR1
+macOS：15.8.1
+驱动：NullMoth 2.3.5（官方 tarball，未修改）
+OpenCore：ResizeGpuBars=&lt;X&gt; ResizeAppleGpuBars=&lt;Y&gt; ResizeUsePciRbIo=False
+其它 boot-args：&lt;原样&gt;
+
+结果：&lt;桌面起来了 / 黑屏但 SSH 通 / 中途重启&gt;
+
+关键日志：
+&lt;贴 kernlog-bar1-only.txt 全文&gt;
+
+nvrm-bars：
+&lt;贴那一行&gt;
+
+VRAM 预算：&lt;数字&gt; 字节</code></pre>
+</div>
+
+<h2>六、附录：脚本产出什么</h2>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>文件</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><code>nvrm-props.txt</code></td><td><strong><code>nvrm-bars</code> 那一行</strong>（判决书）</td></tr>
+<tr><td><code>kernlog-bar1-only.txt</code></td><td>只留 bar1 / aperture / RmInitAdapter 相关行，<strong>可以直接贴</strong></td></tr>
+<tr><td><code>sysctl.txt</code></td><td>VRAM 预算、flip 计数</td></tr>
+<tr><td><code>gpu-pci.txt</code></td><td>显卡 PCI 节点 + <code>assigned-addresses</code></td></tr>
+<tr><td><code>pci-bridges.txt</code></td><td>根端口窗口（<code>placeLargeBar1</code> 改的就是这里）</td></tr>
+<tr><td><code>crashes.txt</code></td><td>WindowServer 崩溃循环状态</td></tr>
+<tr><td><code>ioreg-full.txt</code></td><td>完整 ioreg，兜底用（3~4&nbsp;MB）</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>脚本末尾会自动打一句判读结论，先看那句。</p>
+
+<footer>
+  <p>本手册是第三方排障资料，与 NullMoth / NullMoth Systems 无关联。<br>
+  脚本 <a href="https://github.com/GeekAudio/nm185-diag/blob/main/nm185-diag.sh">nm185-diag.sh</a> · MIT 许可证 · 纯只读，不改动任何系统设置。</p>
+</footer>
+
+</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var text = btn.getAttribute('data-copy');
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = '已复制';
+      btn.classList.add('done');
+      setTimeout(function () { btn.textContent = old; btn.classList.remove('done'); }, 1400);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+    } else {
+      fallback(text, done);
+    }
+  });
+});
+function fallback(text, done) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) {}
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>
