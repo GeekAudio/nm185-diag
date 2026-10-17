@@ -10,8 +10,11 @@
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh
-sudo bash /tmp/nm185-diag.sh
+bash /tmp/nm185-diag.sh --guide      # ① 先读手册（整份打到终端里）
+sudo bash /tmp/nm185-diag.sh         # ② 再取证
 ```
+
+`--guide` 会把整份手册打印到终端 —— 屏幕不亮也能读，不用开浏览器。
 
 如果报 `curl: (35) Recv failure: Connection reset by peer`，那是网络被重置，不是脚本问题。
 注意 **`curl` 不读 macOS 的系统代理设置**，只认环境变量 —— 代理开着也要显式给：
@@ -63,16 +66,13 @@ sudo reboot
 
 ## 二、E0：用 2.3.5 复测一次（5 分钟，零风险）
 
-不改任何配置，只确认后半段阻塞还在。
+不改任何配置，只确认后半段阻塞还在。跑一次取证：
 
 ```bash
-# 1. 确认版本
-plutil -p /Library/Extensions/NVRM.kext/Contents/Info.plist | grep CFBundleVersion
-# 期望：2.3.5
-
-# 2. 取证
 sudo bash nm185-diag.sh ~/Desktop
 ```
+
+跑完看输出末尾的「驱动:」和「nvrm-bars」两行。
 
 **判读**：
 
@@ -110,36 +110,14 @@ if (!newSize) {                                  // BAR1 已经是 >= 4 GB，不
 >
 > ★★ **本机组 C（`ResizeGpuBars=13`）已实测 = 黑屏起不来**，见 §五。别再重复。
 
-SSH 里改（记得先备份）：
+改哪里：OpenCore 的 `EFI/OC/config.plist`，用 ProperTree 或 OCAuxiliaryTools 打开，
+只改这两个整数，其它别动。
 
-```bash
-# 找到并挂载 ESP
-diskutil list
-sudo diskutil mount disk0s1
+- `ResizeGpuBars` → **`UEFI → Quirks`**
+- `ResizeAppleGpuBars` → **`Booter → Quirks`**
 
-# 挂载点里可能是 OC/ 也可能是 EFI/OC/，自动找一下
-CFG=$(ls /Volumes/EFI/OC/config.plist /Volumes/EFI/EFI/OC/config.plist 2>/dev/null | head -1)
-echo "config = $CFG"
-
-# 备份（★ 一定要做）
-sudo cp "$CFG" ~/config.plist.bak-$(date +%H%M)
-
-# 改值：13 = 2^13 MB = 8192 MB；12 = 4096 MB；8 = 256 MB；-1 = 不动
-# ★ 注意路径不同：ResizeGpuBars 在 UEFI.Quirks，ResizeAppleGpuBars 在 Booter.Quirks
-sudo plutil -replace 'UEFI.Quirks.ResizeGpuBars'        -integer 13 "$CFG"
-sudo plutil -replace 'Booter.Quirks.ResizeAppleGpuBars' -integer -1 "$CFG"
-
-# 校验 + 落盘（★ FAT 不 sync 会读到旧文件）
-plutil -lint "$CFG"
-plutil -extract UEFI.Quirks.ResizeGpuBars        raw "$CFG"
-plutil -extract Booter.Quirks.ResizeAppleGpuBars raw "$CFG"
-sync; sleep 8
-
-sudo reboot
-```
-
-> 上面这几条我在本机的 config.plist 副本上跑过，`plutil -replace` 对负数和整数都正常。
-> 注意 `ResizeAppleGpuBars` 在 OpenCore 里是**整数**，`-1` 表示"不动"，不是"缩到最小"。
+> `ResizeAppleGpuBars` 是**整数**，`-1` 表示"不动"，不是"缩到最小"。
+> 改完正常保存、让 EFI 分区正常卸载，再重启。
 
 ### 矩阵
 
@@ -205,6 +183,7 @@ VRAM 预算：<数字> 字节
 `nm185-diag.sh` —— 只读取证，不改任何系统设置。
 
 ```bash
+bash nm185-diag.sh --guide           # 把本手册打印到终端
 sudo bash nm185-diag.sh              # 输出到 /tmp
 sudo bash nm185-diag.sh ~/Desktop    # 输出到桌面
 ```

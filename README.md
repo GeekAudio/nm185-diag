@@ -8,14 +8,20 @@ NullMoth NVIDIA 驱动（`nullmoth/nvidia-macos-driver`）的现场取证脚本�
 
 **📖 测试手册（网页版）：<https://geekaudio.github.io/nm185-diag/>**
 
-## 一键取证
+## 三步走
 
 在目标机上执行（**通过 SSH 在黑屏状态下也可以**）：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh
-sudo bash /tmp/nm185-diag.sh
+bash /tmp/nm185-diag.sh --guide      # ① 先读手册（整份打到终端里）
+sudo bash /tmp/nm185-diag.sh         # ② 再取证
 ```
+
+测试机的屏幕是不亮的，所以 `--guide` 会把整份测试手册**直接打印到终端**：
+判据、安全网、E1 五组矩阵、判读表、汇报模板，一个不少。不用开浏览器。
+
+跑完脚本会自己打出下一步：要贴哪两个文件、`scp` 怎么传、以及一段可以直接复制到聊天窗口的摘要。
 
 如果报 `curl: (35) Recv failure: Connection reset by peer`，那是网络被重置，不是脚本问题。
 注意 **`curl` 不读 macOS 的系统代理设置**，只认环境变量 —— 代理开着也要显式给：
