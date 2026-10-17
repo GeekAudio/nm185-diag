@@ -23,17 +23,21 @@ sudo bash /tmp/nm185-diag.sh         # ② 再取证
 
 跑完脚本会自己打出下一步：要贴哪两个文件、`scp` 怎么传、以及一段可以直接复制到聊天窗口的摘要。
 
-如果报 `curl: (35) Recv failure: Connection reset by peer`，那是网络被重置，不是脚本问题。
-注意 **`curl` 不读 macOS 的系统代理设置**，只认环境变量 —— 代理开着也要显式给：
+### curl 被重置（Connection reset by peer）
+
+`ping github.com` 通、`curl` 却被掐断 —— 网络是通的，**只是终端没走代理**。
+`curl` **不读 macOS 的系统代理设置**，只认环境变量。
 
 ```bash
-export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890
-curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh
-sudo bash /tmp/nm185-diag.sh
+P=$(scutil --proxy | awk '/HTTPSProxy/{h=$3}/HTTPSPort/{p=$3}END{if(h&&p)print h":"p}')
+[ -n "$P" ] && export https_proxy=http://$P http_proxy=http://$P; echo "proxy=${P:-none}"
+curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh || \
+curl -fsSL https://cdn.jsdelivr.net/gh/GeekAudio/nm185-diag@main/nm185-diag.sh -o /tmp/nm185-diag.sh
+bash /tmp/nm185-diag.sh --guide
 ```
 
-端口按代理工具改：Clash / ClashX `7890`、Surge `6152`、V2Ray `10809`（http）。
-也可以只给这一条命令加：`curl -x http://127.0.0.1:7890 -fsSL …`
+`proxy=none` 说明系统里没配代理。Clash Verge 常见 `7897`、ClashX `7890`、V2Ray `10809`。
+实在搞不定就别下载了 —— 让人把 `nm185-diag.sh` 直接发给你，存到 `/tmp` 再跑。
 
 产出 `nm185-<主机名>-<时间戳>.tar.gz`，以及同名的解包目录。
 

@@ -76,9 +76,24 @@ sudo bash /tmp/nm185-diag.sh         # ② 再取证</code></pre>
 </div>
 <p><code>--guide</code> 把整份手册打印到终端 —— 屏幕不亮就靠这个读。</p>
 
+<h2>⚠ curl 被重置（Connection reset by peer）</h2>
+<p><code>ping github.com</code> 通、<code>curl</code> 却被 <code>Recv failure: Connection reset by peer</code> 掐断 —— 说明网络是通的，<strong>只是终端没走代理</strong>。</p>
 <div class="note">
-  <p>报 <code>curl: (35) Recv failure: Connection reset by peer</code> 是网络被重置。<code>curl</code> <strong>不读 macOS 系统代理</strong>，代理开着也要显式给：
-  <code>export https_proxy=http://127.0.0.1:7890 http_proxy=$https_proxy</code></p>
+  <p><code>curl</code> <strong>不读 macOS 的系统代理设置</strong>（系统设置里勾了也没用），它只认环境变量。代理软件开着 ≠ 终端走代理。</p>
+</div>
+<p><strong>整段粘贴这个就行</strong>（自动读系统代理端口 → 下载 → 直接打印手册，不用自己填端口）：</p>
+<div class="codeblock">
+  <button class="copy" data-copy="P=$(scutil --proxy | awk '/HTTPSProxy/{h=$3}/HTTPSPort/{p=$3}END{if(h&amp;&amp;p)print h&quot;:&quot;p}')&#10;[ -n &quot;$P&quot; ] &amp;&amp; export https_proxy=http://$P http_proxy=http://$P; echo &quot;proxy=${P:-none}&quot;&#10;curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh || \&#10;curl -fsSL https://cdn.jsdelivr.net/gh/GeekAudio/nm185-diag@main/nm185-diag.sh -o /tmp/nm185-diag.sh&#10;bash /tmp/nm185-diag.sh --guide">复制</button>
+<pre><code>P=$(scutil --proxy | awk '/HTTPSProxy/{h=$3}/HTTPSPort/{p=$3}END{if(h&amp;&amp;p)print h":"p}')
+[ -n "$P" ] &amp;&amp; export https_proxy=http://$P http_proxy=http://$P; echo "proxy=${P:-none}"
+curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh || \
+curl -fsSL https://cdn.jsdelivr.net/gh/GeekAudio/nm185-diag@main/nm185-diag.sh -o /tmp/nm185-diag.sh
+bash /tmp/nm185-diag.sh --guide</code></pre>
+</div>
+<p>看到 <code>proxy=127.0.0.1:7897</code> 这种就说明代理接上了；<code>proxy=none</code> 说明系统里没配代理，得先开代理软件的「系统代理」。</p>
+<div class="warn">
+  <p><strong>实在搞不定就别下载了。</strong>让群友把 <code>nm185-diag.sh</code> 直接发给你，存到 <code>/tmp</code>，再
+  <code>sudo bash /tmp/nm185-diag.sh</code>。脚本就一个文件，不依赖任何东西。</p>
 </div>
 
 <h2>〇 判据：只看一行</h2>
