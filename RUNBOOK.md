@@ -76,6 +76,19 @@ amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0
 
 并且不能有 `nv_disable=1` 或 `-wegnoegpu`。
 
+| 参数 | 作用 | 缺了会怎样 |
+|---|---|---|
+| `nvfb=1` | NVRMFB 的启动开关（`nvrm-fb.cpp:2145`，源码注释叫 *boot-loop guard*） | NVRMFB 直接 `NOT starting` → 没有任何 framebuffer → **黑屏** |
+| `nvaccel=1` | NVAccel 加速器的启动开关（`nvrm-accel.cpp:593`） | 没有 2D/3D 加速、没有 Metal 合成 → 桌面卡顿或起不来 |
+| `nvfbheads=4` | 发布几个显示 nub（`NVRM.cpp:70`，默认 1，上限 4） | 只发 1 个 → 多显示器 / 多 head 的面板点不亮 |
+| `-nvkmsnosmooth` | 关掉「平滑接管」：不再复刻固件当前的显示时序，让 NVKMS 自己重新设模式（`NVRM.cpp:583`） | 走 smooth takeover 路径，部分机器上花屏 / 黑屏 |
+| `amfi_get_out_of_my_way=0x1` | 关掉 AMFI 的代码签名校验（Apple 参数，不是驱动的） | WindowServer 加载不了未签名的 `NVMTLDriver.bundle` → **没有 Metal** |
+| `amfi=0x80` | 同上，放宽库校验（Apple 参数） | 同上 |
+| `ipc_control_port_options=0` | 放宽 Mach IPC 控制端口限制（Apple 参数） | Firefox 启动即崩（1.11.0 的 changelog 记录过） |
+
+不能有的两个：`nv_disable=1`（旧 web driver 的禁用开关，会隐藏显卡）、
+`-wegnoegpu` / `-wegonogpu`（WhateverGreen 的参数，会把独显藏起来）。
+
 **缺 `nvfb=1` 的症状**：四个 kext 全都加载、NVRM 也打印 `PASS 2 REACHED`，
 但 NVRMFB 直接 `boot-arg nvfb=1 absent: NOT starting` —— 屏幕全黑，看起来像驱动坏了。
 

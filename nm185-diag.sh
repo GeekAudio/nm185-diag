@@ -58,6 +58,36 @@ print_guide() {
 
    nv_disable=1    -wegnoegpu
 
+ 逐项说明：
+
+   nvfb=1                      NVRMFB 的启动开关（nvrm-fb.cpp:2145，
+                               源码注释叫 boot-loop guard）
+                               缺了 -> NVRMFB 直接 NOT starting，没有
+                               framebuffer，黑屏
+
+   nvaccel=1                   NVAccel 加速器开关（nvrm-accel.cpp:593）
+                               缺了 -> 没有 2D/3D 加速、没有 Metal 合成
+
+   nvfbheads=4                 发布几个显示 nub（NVRM.cpp:70，默认 1，
+                               上限 4）
+                               缺了 -> 只发 1 个，多显示器点不亮
+
+   -nvkmsnosmooth              关掉"平滑接管"：不再复刻固件当前时序，
+                               让 NVKMS 自己重新设模式（NVRM.cpp:583）
+                               缺了 -> 部分机器花屏 / 黑屏
+
+   amfi_get_out_of_my_way=0x1  关掉 AMFI 代码签名校验（Apple 参数）
+   amfi=0x80                   放宽库校验（Apple 参数）
+                               这两个缺了 -> WindowServer 加载不了未签名
+                               的 NVMTLDriver.bundle -> 没有 Metal
+
+   ipc_control_port_options=0  放宽 Mach IPC 控制端口（Apple 参数）
+                               缺了 -> Firefox 启动即崩
+
+ 不能有的两个：
+   nv_disable=1   旧 web driver 的禁用开关，会把显卡藏起来
+   -wegnoegpu     WhateverGreen 参数，会把独显藏起来
+
  缺 nvfb=1 的典型症状：kext 全都加载、NVRM 也打印 PASS 2，
  但 NVRMFB 直接 "boot-arg nvfb=1 absent: NOT starting"，
  屏幕全黑 —— 看起来像驱动坏了，其实只是没配 OpenCore。

@@ -86,6 +86,49 @@ sudo bash /tmp/nm185-diag.sh         # ② 再取证</code></pre>
 amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0</code></pre>
 </div>
 <p>并且不能有 <code>nv_disable=1</code> 或 <code>-wegnoegpu</code>。</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th>参数</th><th>作用</th><th>缺了会怎样</th></tr></thead>
+<tbody>
+<tr>
+  <td><code>nvfb=1</code></td>
+  <td>NVRMFB 的启动开关（<code>nvrm-fb.cpp:2145</code>，源码注释叫 <em>boot-loop guard</em>）</td>
+  <td>NVRMFB 直接 <code>NOT starting</code> → 没有任何 framebuffer → <strong>黑屏</strong></td>
+</tr>
+<tr>
+  <td><code>nvaccel=1</code></td>
+  <td>NVAccel 加速器的启动开关（<code>nvrm-accel.cpp:593</code>）</td>
+  <td>没有 2D/3D 加速、没有 Metal 合成 → 桌面卡顿或起不来</td>
+</tr>
+<tr>
+  <td><code>nvfbheads=4</code></td>
+  <td>发布几个显示 nub（<code>NVRM.cpp:70</code>，默认 1，上限 4）</td>
+  <td>只发 1 个 → 多显示器 / 多 head 的面板点不亮</td>
+</tr>
+<tr>
+  <td><code>-nvkmsnosmooth</code></td>
+  <td>关掉「平滑接管」：不再复刻固件当前的显示时序，让 NVKMS 自己重新设模式（<code>NVRM.cpp:583</code>）</td>
+  <td>走 smooth takeover 路径，部分机器上花屏 / 黑屏</td>
+</tr>
+<tr>
+  <td><code>amfi_get_out_of_my_way=0x1</code></td>
+  <td>关掉 AMFI 的代码签名校验（Apple 参数，不是驱动的）</td>
+  <td rowspan="2">WindowServer 加载不了未签名的 <code>NVMTLDriver.bundle</code> → <strong>没有 Metal</strong></td>
+</tr>
+<tr>
+  <td><code>amfi=0x80</code></td>
+  <td>同上，放宽库校验（Apple 参数）</td>
+</tr>
+<tr>
+  <td><code>ipc_control_port_options=0</code></td>
+  <td>放宽 Mach IPC 控制端口限制（Apple 参数）</td>
+  <td>Firefox 启动即崩（1.11.0 的 changelog 记录过）</td>
+</tr>
+</tbody>
+</table>
+</div>
+
 <div class="warn">
   <p><strong>缺 <code>nvfb=1</code> 的症状</strong>：四个 kext 全都加载、NVRM 也打印 <code>PASS 2 REACHED</code>，
   但 NVRMFB 直接 <code>boot-arg nvfb=1 absent: NOT starting</code> —— 屏幕全黑，看起来像驱动坏了。</p>
