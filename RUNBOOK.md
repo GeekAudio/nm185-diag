@@ -1,8 +1,24 @@
 # Issue #185 测试手册（RTX 4060 Laptop / R9000P 2023）
 
+> 网页版（手机上更好读）：<https://geekaudio.github.io/nm185-diag/>
+>
 > 目标机型：Lenovo Legion R9000P 2023 / Ryzen 9 7945HX / RTX 4060 Laptop（`10de:28e0`，8 GB BAR1）/ 内屏 2560×1600
 > 驱动：NullMoth **2.3.5**（issue 里的实测停在 2.1.0，2.2.0 之后无人复测过）
 > 前提：**能 SSH 进黑屏的系统**。这条已确认可行（issue 里 @iussch 就是这么做的）。
+
+## 一键取证
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/GeekAudio/nm185-diag/main/nm185-diag.sh -o /tmp/nm185-diag.sh
+sudo bash /tmp/nm185-diag.sh
+```
+
+GitHub 访问不了就用镜像：
+
+```bash
+curl -fsSL https://cdn.jsdelivr.net/gh/GeekAudio/nm185-diag@main/nm185-diag.sh -o /tmp/nm185-diag.sh
+sudo bash /tmp/nm185-diag.sh
+```
 
 ---
 
@@ -51,7 +67,7 @@ plutil -p /Library/Extensions/NVRM.kext/Contents/Info.plist | grep CFBundleVersi
 # 期望：2.3.5
 
 # 2. 取证
-sudo bash 185-diag.sh ~/Desktop
+sudo bash nm185-diag.sh ~/Desktop
 ```
 
 **判读**：
@@ -123,7 +139,7 @@ sudo reboot
 | **D** | `12` | `-1` | `>= 4 GB` 这个阈值的边界（4 GB 刚好卡在条件上） |
 | **E** | `8` | `-1` | 对照组：固件给 256 MB，走 resize 路径 |
 
-每组跑完都 `sudo bash 185-diag.sh ~/Desktop`，把 `kernlog-bar1-only.txt` 和 `nvrm-props.txt` 留着。
+每组跑完都 `sudo bash nm185-diag.sh ~/Desktop`，把 `kernlog-bar1-only.txt` 和 `nvrm-props.txt` 留着。
 
 ### 每组要抓的那几行
 
@@ -174,11 +190,11 @@ VRAM 预算：<数字> 字节
 
 ## 六、附：脚本在哪、怎么用
 
-`工具/185-diag.sh` —— 只读取证，不改任何系统设置。
+`nm185-diag.sh` —— 只读取证，不改任何系统设置。
 
 ```bash
-sudo bash 185-diag.sh              # 输出到 /tmp
-sudo bash 185-diag.sh ~/Desktop    # 输出到桌面
+sudo bash nm185-diag.sh              # 输出到 /tmp
+sudo bash nm185-diag.sh ~/Desktop    # 输出到桌面
 ```
 
 产出 `nm185-<主机名>-<时间戳>.tar.gz`，里面最重要的是：
