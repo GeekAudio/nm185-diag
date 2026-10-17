@@ -464,9 +464,12 @@ echo "== 7/7 崩溃现场 =="
     echo "### WindowServer 崩溃报告（最新 3 份，只留摘要）"
     for f in $(ls -t /Library/Logs/DiagnosticReports/WindowServer-*.ips 2>/dev/null | head -3); do
         echo "---------- $f"
-        /usr/bin/grep -E '"exception"|"termination"|"faultingThread"|CoreDisplay|CGXDisplay|__assert_rtn|ktriageinfo' "$f" 2>/dev/null | head -12
+        /usr/bin/grep -E '"exception"|"termination"|"reason"|"asi"|"faultingThread"|CoreDisplay|CGXDisplay|__assert_rtn|ktriageinfo' "$f" 2>/dev/null | head -12
         echo
     done
+    # __assert_rtn 的断言原文在 asi/reason 里，这是定位 CoreDisplay 崩溃最直接的一条
+    echo "### WindowServer 断言原文"
+    /usr/bin/grep -hoE 'Assertion failed:[^"]*' /Library/Logs/DiagnosticReports/WindowServer-*.ips 2>/dev/null | /usr/bin/sort -u | head -5
     echo "### 内核 panic（最新 2 份）"
     ls -lt /Library/Logs/DiagnosticReports/Kernel-*.panic 2>/dev/null | head -2
 } > "$OUT/crashes.txt" 2>&1
