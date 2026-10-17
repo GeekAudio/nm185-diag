@@ -61,8 +61,6 @@ print_guide() {
  但 NVRMFB 直接 "boot-arg nvfb=1 absent: NOT starting"，
  屏幕全黑 —— 看起来像驱动坏了，其实只是没配 OpenCore。
 
- 本脚本开跑前会自动检查这一项，缺了会大声喊。
-
  补 boot-args 的两个办法：
 
    A) 用 1401 app 装（它自己会写）
@@ -269,61 +267,6 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 say() { printf '  %-42s %s\n' "$1" "$2"; }
-
-# ---------------------------------------------------------------- 前置检查
-# 装完驱动但没配 OpenCore 的机器很常见：kext 全加载了、NVRM 也起来了，
-# 但 NVRMFB 因为缺 nvfb=1 直接 NOT starting，屏幕全黑，看起来像驱动坏了。
-# 这一段先把这种情况喊出来，免得白抓一堆日志。
-preflight() {
-    ARGS=$(nvram boot-args 2>/dev/null | /usr/bin/sed 's/^boot-args[[:space:]]*//')
-    NEED="nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0"
-    MISS=""
-    for a in $NEED; do
-        case " $ARGS " in
-            *" $a "*) ;;
-            *) MISS="$MISS $a" ;;
-        esac
-    done
-    BAD=""
-    for b in nv_disable=1 -wegnoegpu -wegonogpu; do
-        case " $ARGS " in
-            *" $b "*) BAD="$BAD $b" ;;
-        esac
-    done
-    {
-        echo "### 当前 boot-args"
-        echo "${ARGS:-(空)}"
-        echo
-        echo "### 缺失（README 要求）"
-        echo "${MISS:-无}"
-        echo
-        echo "### 不该有"
-        echo "${BAD:-无}"
-    } > "$OUT/preflight.txt" 2>&1
-
-    if [ -n "$MISS" ]; then
-        echo
-        echo "  ############################################################"
-        echo "  #  ★ 前置检查未通过：boot-args 缺东西，驱动不会驱动显示器"
-        echo "  #"
-        echo "  #    缺：$MISS"
-        echo "  #"
-        echo "  #  症状就是黑屏，但 kext 全都加载了 —— 因为 NVRMFB 在"
-        echo "  #  start() 里看到没有 nvfb=1 就直接 NOT starting。"
-        echo "  #  这时候抓的日志对 issue #185 没有意义。"
-        echo "  #"
-        echo "  #  先补齐 boot-args（详见 --guide 的「前置检查」一节）再跑。"
-        echo "  ############################################################"
-        echo
-    fi
-    if [ -n "$BAD" ]; then
-        echo "  ★ 警告：boot-args 里有会把显卡藏起来的参数：$BAD"
-        echo
-    fi
-}
-
-preflight
-
 
 # 抓一个命令到文件。$1 = 文件名, 其余 = 命令
 cap() {

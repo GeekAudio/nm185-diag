@@ -81,8 +81,6 @@ amfi_get_out_of_my_way=0x1  amfi=0x80  ipc_control_port_options=0
 → `boot-args`，**并且把 `boot-args` 同时加进 `NVRAM` → `Delete`**
 （只加 Add 不加 Delete 无效，变量已存在时 OpenCore 不会覆盖）。
 
-脚本开跑前会自动检查这一项，缺了会直接大字警告。
-
 ---
 
 ## 〇、先看两行，就知道走到了哪一步
