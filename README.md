@@ -39,6 +39,15 @@ bash /tmp/nm185-diag.sh --guide
 `proxy=none` 说明系统里没配代理。Clash Verge 常见 `7897`、ClashX `7890`、V2Ray `10809`。
 实在搞不定就别下载了 —— 让人把 `nm185-diag.sh` 直接发给你，存到 `/tmp` 再跑。
 
+### command not found / permission denied
+
+下载下来的脚本默认没有执行位（644），`./nm185-diag.sh` 会失败。
+别用 `./`，用 `bash`：
+
+```bash
+sudo bash nm185-diag.sh
+```
+
 产出 `nm185-<主机名>-<时间戳>.tar.gz`，以及同名的解包目录。
 
 ## 它只读，不改任何东西

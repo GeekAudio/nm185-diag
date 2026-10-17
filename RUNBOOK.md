@@ -47,6 +47,19 @@ Clash Verge 常见 `7897`、ClashX `7890`、V2Ray `10809`（http），
 > **实在搞不定就别下载了**：让群友把 `nm185-diag.sh` 直接发给你，存到 `/tmp`，
 > 再 `sudo bash /tmp/nm185-diag.sh`。脚本就一个文件，不依赖任何东西。
 
+### command not found / permission denied
+
+文件明明在，但 `sudo ./nm185-diag.sh` 报 `command not found`，直接 `./nm185-diag.sh`
+报 `permission denied` —— 因为下载下来的脚本**没有执行位**（默认 644）。
+`./xxx.sh` 要求 +x，`bash xxx.sh` 不要求。
+
+```bash
+cd ~/Desktop
+sudo bash nm185-diag.sh
+```
+
+看手册不用 sudo，也不用执行位：`bash nm185-diag.sh --guide`
+
 ---
 
 ## 〇、先看两行，就知道走到了哪一步
