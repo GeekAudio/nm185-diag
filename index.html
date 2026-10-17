@@ -135,6 +135,14 @@ amfi_get_out_of_my_way=0x1  amfi=0x80</code></pre>
 </div>
 
 <div class="warn">
+  <p><strong>装了 WhateverGreen 就还得加 <code>gfxrst=4</code>。</strong>
+  核显机器（Ryzen / Intel 带 iGPU）几乎都会装 WhateverGreen —— 这时候 <code>gfxrst=4</code> 是第 7 项，
+  少它驱动会自己报警：</p>
+  <p><code>WhateverGreen is loaded without boot-arg gfxrst=4: its boot screen copy can read freed
+  memory when this display opens (kernel panic in IOFramebuffer::postOpen)</code></p>
+</div>
+
+<div class="warn">
   <p><strong>缺 <code>nvfb=1</code> 的症状</strong>：四个 kext 全都加载、NVRM 也打印 <code>PASS 2 REACHED</code>，
   但 NVRMFB 直接 <code>boot-arg nvfb=1 absent: NOT starting</code> —— 屏幕全黑，看起来像驱动坏了。</p>
 </div>

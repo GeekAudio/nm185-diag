@@ -94,6 +94,11 @@ print_guide() {
    nv_disable=1   旧 web driver 的禁用开关，会把显卡藏起来
    -wegnoegpu     WhateverGreen 参数，会把独显藏起来
 
+ ★ 装了 WhateverGreen 就还得再加 gfxrst=4（核显机器几乎都会装）。
+   少它驱动会自己报警：WhateverGreen is loaded without boot-arg
+   gfxrst=4: its boot screen copy can read freed memory when this
+   display opens (kernel panic in IOFramebuffer::postOpen)。
+
  缺 nvfb=1 的典型症状：kext 全都加载、NVRM 也打印 PASS 2，
  但 NVRMFB 直接 "boot-arg nvfb=1 absent: NOT starting"，
  屏幕全黑 —— 看起来像驱动坏了，其实只是没配 OpenCore。

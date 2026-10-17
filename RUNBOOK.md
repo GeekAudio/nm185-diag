@@ -93,6 +93,11 @@ amfi_get_out_of_my_way=0x1  amfi=0x80
 不能有的两个：`nv_disable=1`（旧 web driver 的禁用开关，会隐藏显卡）、
 `-wegnoegpu` / `-wegonogpu`（WhateverGreen 的参数，会把独显藏起来）。
 
+> ⚠️ **装了 WhateverGreen 就还得加 `gfxrst=4`** —— 核显机器（Ryzen / Intel 带 iGPU）几乎都会装。
+> 少它驱动会自己报警：
+> `WhateverGreen is loaded without boot-arg gfxrst=4: its boot screen copy can read freed memory
+> when this display opens (kernel panic in IOFramebuffer::postOpen)`。
+
 **缺 `nvfb=1` 的症状**：四个 kext 全都加载、NVRM 也打印 `PASS 2 REACHED`，
 但 NVRMFB 直接 `boot-arg nvfb=1 absent: NOT starting` —— 屏幕全黑，看起来像驱动坏了。
 
